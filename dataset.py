@@ -9,8 +9,8 @@ from PIL import Image
 
 
 class Dataset(data.Dataset):
-    def __init__(self, data_dir, triplet_dir, mode, fixed_offset, load_raw=False):
-        self.data_dir = data_dir
+    def __init__(self, triplet_dir, mode, fixed_offset, load_raw=False):
+        # self.data_dir = data_dir
         self.fixed_offset = fixed_offset
         self.load_raw = load_raw
         triplet_path = os.path.join(triplet_dir, 'triplets_' + mode + '.txt')
