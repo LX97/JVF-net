@@ -3,32 +3,42 @@ import numpy as np
 import torch
 import librosa
 import random
+import wave
+import librosa
 import torch.utils.data as data
 import torchvision.transforms as transforms
 from PIL import Image
-
+from scipy.io import wavfile
 
 class Dataset(data.Dataset):
-    def __init__(self, triplet_dir, mode, fixed_offset, load_raw=False):
+    def __init__(self, triplet_path, mode, fixed_offset, load_raw=False):
         # self.data_dir = data_dir
         self.fixed_offset = fixed_offset
         self.load_raw = load_raw
-        triplet_path = os.path.join(triplet_dir, 'triplets_' + mode + '.txt')
-        with open(triplet_path, 'r') as f:
-            self.all_triplets = f.readlines()
-        self.all_triplets = self.all_triplets[1:]
+        self.triplet_path = triplet_path
+
+        all_triplets = np.load(triplet_path, allow_pickle=True)
+        self.all_triplets = all_triplets.tolist()
+
         self.transform = transforms.Compose(
             [transforms.ToTensor(),
              transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
         )
 
-    def __getitem__(self, index):
-        triplet = self.all_triplets[index].split('\t')
-        triplet[1] = triplet[1].replace('.wav', '.wav.npy')
-        triplet[1] = triplet[1].replace('vox1_dev_wav', 'vox1_dev_npy')
-        real_audio_path = os.path.join(self.data_dir, triplet[1])
-        real_face_path = os.path.join(self.data_dir, triplet[2])
-        fake_face_path = os.path.join(self.data_dir, triplet[3])
+    def __getitem__(self, p_index):
+        n_index = p_index
+        speakers_num = len(self.all_triplets)
+        positive = self.all_triplets[p_index]
+
+        while(n_index == p_index):
+            n_index = np.random.randint(0, speakers_num)   #计算 0~1225之间的随机数
+
+        negative = self.all_triplets[n_index]
+
+        real_audio_path = positive['voice_path'][np.random.randint(0, len(positive['voice_path']))]
+        real_face_path =  positive['face_path'][np.random.randint(0, len(positive['face_path']))]
+        fake_face_path = negative['face_path'][np.random.randint(0, len(negative['face_path']))]
+
         real_audio = self.load_audio(real_audio_path)
         real_face = self.load_face(real_face_path)
         fake_face = self.load_face(fake_face_path)
@@ -44,7 +54,8 @@ class Dataset(data.Dataset):
         return real_audio, face_a, face_b, ground_truth
 
     def load_audio(self, audio_path):
-        y = np.load(audio_path)   # .np files
+        y = librosa.load(audio_path)
+        y = y[0]
         if self.fixed_offset:
             offset = 0
         else:
@@ -97,12 +108,14 @@ def custom_collate_fn(batch):
 if __name__ == '__main__':
     from torch.utils.data import DataLoader
 
-    dataset = Dataset('./dataset/voclexb-VGG_face-datasets', './triplets', 'train', False)
-    loader = DataLoader(dataset, batch_size=32, shuffle=False, drop_last=True, num_workers=0, collate_fn=custom_collate_fn)
+    dataset = Dataset( './dataset/voclexb-VGG_face-datasets/voice_face_list.npy', 'train', False)
+    loader = DataLoader(dataset, batch_size=8, shuffle=False, drop_last=True, num_workers=8, collate_fn=custom_collate_fn)
 
     for step, (real_audio, face_a, face_b, ground_truth) in enumerate(loader):
         print(real_audio.shape)  # (B, 1, 512, 300)
         print(face_a.shape)  # (B, 3, 224, 224)
         print(face_b.shape)
         print(ground_truth.shape)  # (B)
+        print(ground_truth)
+
         break
