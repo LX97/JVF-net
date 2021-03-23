@@ -11,13 +11,12 @@ from PIL import Image
 from scipy.io import wavfile
 
 class Dataset(data.Dataset):
-    def __init__(self, triplet_path, mode, fixed_offset, load_raw=False):
+    def __init__(self, data_dir, mode, fixed_offset, load_raw=False):
         # self.data_dir = data_dir
         self.fixed_offset = fixed_offset
         self.load_raw = load_raw
-        self.triplet_path = triplet_path
 
-        all_triplets = np.load(triplet_path, allow_pickle=True)
+        all_triplets = np.load(data_dir, allow_pickle=True)
         self.all_triplets = all_triplets.tolist()
 
         self.transform = transforms.Compose(

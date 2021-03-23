@@ -4,7 +4,7 @@ res_ckpt_path: ./saved/model3_bn/model_16.pt
 pase_cfg_path: ../pase/cfg/PASE.cfg  # not the files
 pase_ckpt_path: ../pase/PASE.ckpt   # not the files
 
-data_dir: ../SVHF_dataset
+data_dir: ./dataset/voclexb-VGG_face-datasets/voice_face_list.npy
 triplet_dir: ./triplets
 batch_size: 48
 num_workers: 32

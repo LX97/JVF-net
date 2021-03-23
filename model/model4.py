@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import sys
 import os
-pase_path = os.path.abspath('../pase')
+pase_path = os.path.abspath('/home/fz/2-VF-feature/pase')
 sys.path.append(pase_path)
 print('Add pase to system path:', pase_path)
 from pase.models.frontend import wf_builder
