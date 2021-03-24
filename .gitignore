@@ -5,3 +5,7 @@ __pycache__/
 .DS_Store
 toy_dataset
 saved/
+dataset/voclexb-VGG_face-datasets/1-face/
+dataset/voclexb-VGG_face-datasets/2-voice-wav/
+dataset/voclexb-VGG_face-datasets/Fbank-train/
+dataset/voclexb-VGG_face-datasets/Fbank-train.zip
