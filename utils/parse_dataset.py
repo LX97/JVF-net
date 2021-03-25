@@ -6,7 +6,7 @@ import shutil
 import string
 
 
-def get_labels(voice_list, face_list, celeb_ids):
+def get_voclexb_labels(voice_list, face_list, celeb_ids):
     """
     合并voice和face中的同类项目
     :param voice_list:
@@ -23,11 +23,14 @@ def get_labels(voice_list, face_list, celeb_ids):
     face_list = [item for item in face_list if item['name'] in names]
 
     names = list(names)
+    label_dict = dict(zip(names, range(len(names))))
     temp1 = []
     temp2 = []
-    label_dict = dict(zip(names, range(len(names))))
+
+    # 建立
 
 
+    # 建立联合组voice+face-list
     for name in names[:]:
         for item in voice_list:   # 为list增加序号label_id
             if name == item['name']:
@@ -45,6 +48,9 @@ def get_labels(voice_list, face_list, celeb_ids):
 
 
 def get_dataset_files(data_dir, data_ext, celeb_ids):
+    """
+    从文件夹中寻找所有voice和face数据
+    """
     data_list = []
 
     # read data directory
@@ -77,9 +83,10 @@ def get_voclexb_csv(csv_files, voice_folder, face_folder):
 
     voice_list = get_dataset_files(voice_folder, 'wav', actor_dict)
     face_list = get_dataset_files(face_folder, 'jpg', actor_dict)
-    voice_face_list = get_labels(voice_list, face_list, actor_dict1)
-    np.save('./dataset/voclexb-VGG_face-datasets/voice_face_list.npy', voice_face_list)
-    csv_pth = os.path.join('./dataset/voclexb-VGG_face-datasets/', 'voice_face_list.csv')
+    voice_face_list = get_voclexb_labels(voice_list, face_list, actor_dict1)
+
+    # np.save('./dataset/voclexb-VGG_face-datasets/voice_face_list.npy', voice_face_list)
+    csv_pth = os.path.join('../dataset/voclexb-VGG_face-datasets/', 'voice_face_list.csv')
     with open(csv_pth,'w',newline='', ) as f:
         f_scv = csv.DictWriter(f,csv_headers,delimiter = '\t', lineterminator = '\n')
         f_scv.writeheader()

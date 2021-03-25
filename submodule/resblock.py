@@ -1,6 +1,7 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from torchsummary import summary
 
 class Block(nn.Module):
     def __init__(self, in_channels, out_channels, hidden_channels=None, k_size=3, pad=1, activation=F.relu, downsample=False):
@@ -59,3 +60,11 @@ class OptimizedBlock(nn.Module):
 
     def forward(self, x):
         return self.residual(x) + self.shortcut(x)
+
+
+if __name__ == '__main__':
+    block1 = OptimizedBlock(3, 64)
+    print(block1)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    block1 = block1.to(device)
+    summary(block1, (3,224,224))

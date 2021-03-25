@@ -5,12 +5,17 @@ import librosa
 import random
 import wave
 import librosa
-import torch.utils.data as data
+from torch.utils.data import Dataset
 import torchvision.transforms as transforms
 from PIL import Image
 from scipy.io import wavfile
 
-class Dataset(data.Dataset):
+class VGG_Face_Dataset(Dataset):
+    def __init__(self, face_list, mode, fixed_offset, load_raw=False):
+
+
+
+class Dataset(Dataset):
     def __init__(self, data_dir, mode, fixed_offset, load_raw=False):
         # self.data_dir = data_dir
         self.fixed_offset = fixed_offset

@@ -3,14 +3,38 @@ import torch.nn as nn
 import torch.nn.functional as F
 import sys
 import os
-
+from torchsummary import summary
+from submodule.resblock import Block, OptimizedBlock
 # pase_path = os.path.abspath('/home/fz/2-VF-feature/pase')
 # sys.path.append(pase_path)
 # print('Add pase to system path:', pase_path)
 sys.path.append("/home/fz/2-VF-feature/SVHFNet/model")
+
 from pase.models.frontend import wf_builder
 import model3
 
+class ResNet(nn.Module):
+    def __init__(self, ch=64, activation=F.relu):
+        super(ResNet, self).__init__()
+        self.activation = activation
+        self.block1 = OptimizedBlock(3, ch)
+        self.block2 = Block(ch, ch * 2, activation=activation, downsample=True)
+        self.block3 = Block(ch * 2, ch * 4, activation=activation, downsample=True)
+        self.block4 = Block(ch * 4, ch * 8, activation=activation, downsample=True)
+        self.block5 = Block(ch * 8, ch * 16, activation=activation, downsample=True)
+        self.block6 = Block(ch * 16, ch * 16, activation=activation, downsample=False)
+
+    def forward(self, x):
+        h = x
+        h = self.block1(h)
+        h = self.block2(h)
+        h = self.block3(h)
+        h = self.block4(h)
+        h = self.block5(h)
+        h = self.block6(h)
+        h = F.relu(h)
+        h = torch.sum(h, (2, 3))  # Global sum pooling.
+        return h
 
 # RestNet for visual stream, PASE for audio stream / All network is pretrained.
 class AudioStream(nn.Module):
@@ -35,10 +59,11 @@ class SVHFNet(nn.Module):
         super().__init__()
         m3 = model3.SVHFNet()
         map_location = None if torch.cuda.is_available() else 'cpu'
-        check_point = torch.load(res_ckpt_path, map_location=map_location)  ## res??
+        check_point = torch.load(res_ckpt_path, map_location=map_location)  # cuda:1
         state_dict = check_point['net']
         m3.load_state_dict(state_dict)
         self.vis_stream = m3.vis_stream
+
         pase = wf_builder(pase_cfg_path)     # read pre-trained model
         pase.load_pretrained(pase_ckpt_path, load_last=True, verbose=True)
         self.aud_stream = AudioStream(pase)
@@ -63,12 +88,20 @@ class SVHFNet(nn.Module):
         return x
 
 if __name__ == '__main__':
-    pase_cfg_path = '../../PASE/cfg/PASE.cfg'
-    pase_ckpt_path = '../../PASE/model/FE_e199.ckpt'
-    res_ckpt_path = '../../saved/model3_bn/model_16.pt'
+    # pase_cfg_path = '../../PASE/cfg/PASE.cfg'
+    # pase_ckpt_path = '../../PASE/model/FE_e199.ckpt'
+    # res_ckpt_path = '../../saved/model3_bn/model_16.pt'
+    net = ResNet()
+    print(net)
+    device = torch.device('cuda')
+    net = net.to(device)
+    summary(net, (3,224,224))
+
     face_a = torch.empty((2, 3, 224, 224))
     face_b = torch.empty((2, 3, 224, 224))
-    audio = torch.empty((2, 1, 48000))
-    net = SVHFNet(res_ckpt_path, pase_cfg_path, pase_ckpt_path)
-    output = net(face_a, face_b, audio)
-    print(output.shape)
+    audio_a = torch.empty((2, 1, 48000))
+
+
+    # net = SVHFNet(res_ckpt_path, pase_cfg_path, pase_ckpt_path)
+    # output = net(face_a, face_b, audio)
+    # print(output.shape)
