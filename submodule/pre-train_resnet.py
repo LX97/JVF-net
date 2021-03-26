@@ -8,7 +8,7 @@ from dataset import Dataset
 # import models.resnet as ResNet
 # import models.senet as SENet
 # import models.vgg as VGG
-Dataset
+
 
 # from face_image_embeddding.utils import utils, face_dataset
 # from face_image_embeddding.trainer import Trainer

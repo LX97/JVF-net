@@ -6,12 +6,48 @@ import random
 import wave
 import librosa
 from torch.utils.data import Dataset
+from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 from PIL import Image
 from scipy.io import wavfile
 
+Transform = transforms.Compose(
+    [transforms.ToTensor(),
+     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+)
+
+
+def load_face(face_path):
+    # NOTE: 3 channels are in BGR order
+    img = Image.open(face_path)
+
+    if img.layers != 3:    # 灰度图转为彩图
+        print(face_path)
+        img = img.convert('RGB')
+
+    if img.size != (224, 224):
+        img = img.convert('RGB').resize((224, 224), resample=Image.BILINEAR)
+    img = Transform(img)
+    return img
+
+
 class VGG_Face_Dataset(Dataset):
-    def __init__(self, face_list, mode, fixed_offset, load_raw=False):
+    def __init__(self, face_voice_dir, mode, load_raw=False):
+
+        face_voice_list = np.load(face_voice_dir, allow_pickle=True)
+        self.face_voice_list = face_voice_list.tolist()
+        self.speakers_num = len(self.face_voice_list)  # 计算发言者数量
+
+    def __getitem__(self, index):
+        positive = self.face_voice_list[index]
+        label = positive['id_num']
+        real_face_path = positive['face_path'][np.random.randint(0, len(positive['face_path']))]
+        real_face = load_face(real_face_path)
+
+        return real_face, label
+
+    def __len__(self):
+        return len(self.face_voice_list)
 
 
 
@@ -20,9 +56,9 @@ class Dataset(Dataset):
         # self.data_dir = data_dir
         self.fixed_offset = fixed_offset
         self.load_raw = load_raw
-
         all_triplets = np.load(data_dir, allow_pickle=True)
         self.all_triplets = all_triplets.tolist()
+        self.speakers_num = len(self.all_triplets)  # 计算发言者数量
 
         self.transform = transforms.Compose(
             [transforms.ToTensor(),
@@ -31,11 +67,11 @@ class Dataset(Dataset):
 
     def __getitem__(self, p_index):
         n_index = p_index
-        speakers_num = len(self.all_triplets)
+
         positive = self.all_triplets[p_index]
 
         while(n_index == p_index):
-            n_index = np.random.randint(0, speakers_num)   #计算 0~1225之间的随机数
+            n_index = np.random.randint(0, self.speakers_num)   # 计算 0~1225之间的随机数
 
         negative = self.all_triplets[n_index]
 
@@ -110,16 +146,19 @@ def custom_collate_fn(batch):
 
 
 if __name__ == '__main__':
-    from torch.utils.data import DataLoader
 
-    dataset = Dataset( './dataset/voclexb-VGG_face-datasets/voice_face_list.npy', 'train', False)
-    loader = DataLoader(dataset, batch_size=8, shuffle=False, drop_last=True, num_workers=8, collate_fn=custom_collate_fn)
+    # dataset = Dataset( './dataset/voclexb-VGG_face-datasets/voice_face_list.npy', 'train', False)
+    # loader = DataLoader(dataset, batch_size=8, shuffle=False, drop_last=True, num_workers=8, collate_fn=custom_collate_fn)
+    #
+    # for step, (real_audio, face_a, face_b, ground_truth) in enumerate(loader):
+    #     print(real_audio.shape)  # (B, 1, 512, 300)
+    #     print(face_a.shape)  # (B, 3, 224, 224)
+    #     print(face_b.shape)
+    #     print(ground_truth.shape)  # (B)
 
-    for step, (real_audio, face_a, face_b, ground_truth) in enumerate(loader):
-        print(real_audio.shape)  # (B, 1, 512, 300)
-        print(face_a.shape)  # (B, 3, 224, 224)
-        print(face_b.shape)
+    face_dataset = VGG_Face_Dataset('./dataset/voclexb-VGG_face-datasets/voice_face_list.npy', 'train')
+    face_loader = DataLoader(face_dataset, batch_size=8, shuffle=False, drop_last=True, num_workers=8)
+    pass
+    for step, (real_face, ground_truth) in enumerate(face_loader):
+        print(real_face.shape)  # (B, 1, 512, 300)
         print(ground_truth.shape)  # (B)
-        print(ground_truth)
-
-        break
