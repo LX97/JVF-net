@@ -11,11 +11,13 @@ from submodule.resblock import Block, OptimizedBlock
 sys.path.append("/home/fz/2-VF-feature/SVHFNet/model")
 
 from pase.models.frontend import wf_builder
-import model3
+from model import model3
 
 class ResNet(nn.Module):
-    def __init__(self, ch=64, activation=F.relu):
+    def __init__(self, ch=64, num_classes=1000, activation=F.relu, include_top =False):
         super(ResNet, self).__init__()
+        self.include_top = include_top
+
         self.activation = activation
         self.block1 = OptimizedBlock(3, ch)
         self.block2 = Block(ch, ch * 2, activation=activation, downsample=True)
@@ -23,6 +25,8 @@ class ResNet(nn.Module):
         self.block4 = Block(ch * 4, ch * 8, activation=activation, downsample=True)
         self.block5 = Block(ch * 8, ch * 16, activation=activation, downsample=True)
         self.block6 = Block(ch * 16, ch * 16, activation=activation, downsample=False)
+        self.avgpool = nn.AvgPool2d(7, stride=1)
+        self.fc = nn.Linear(512 * 2, num_classes)
 
     def forward(self, x):
         h = x
@@ -32,8 +36,18 @@ class ResNet(nn.Module):
         h = self.block4(h)
         h = self.block5(h)
         h = self.block6(h)
-        h = F.relu(h)
-        h = torch.sum(h, (2, 3))  # Global sum pooling.
+
+        # h = F.relu(h)
+        # h = torch.sum(h, (2, 3))  # Global sum pooling.
+
+        h = self.avgpool(h)
+
+        if not self.include_top:
+            return x
+
+        h = h.view(h.size(0), -1)
+        h = self.fc(h)
+
         return h
 
 # RestNet for visual stream, PASE for audio stream / All network is pretrained.
@@ -97,10 +111,9 @@ if __name__ == '__main__':
     net = net.to(device)
     summary(net, (3,224,224))
 
-    face_a = torch.empty((2, 3, 224, 224))
-    face_b = torch.empty((2, 3, 224, 224))
-    audio_a = torch.empty((2, 1, 48000))
-
+    # face_a = torch.empty((2, 3, 224, 224))
+    # face_b = torch.empty((2, 3, 224, 224))
+    # audio_a = torch.empty((2, 1, 48000))
 
     # net = SVHFNet(res_ckpt_path, pase_cfg_path, pase_ckpt_path)
     # output = net(face_a, face_b, audio)

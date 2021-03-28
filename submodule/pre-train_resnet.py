@@ -4,14 +4,15 @@ import torch
 import torch.nn as nn
 import model.model4 as model4
 from torch.utils.data import DataLoader
-from dataset import Dataset
+from dataset import VGG_Face_Dataset
+from model.model4 import ResNet
 # import models.resnet as ResNet
 # import models.senet as SENet
 # import models.vgg as VGG
 
 
 # from face_image_embeddding.utils import utils, face_dataset
-# from face_image_embeddding.trainer import Trainer
+from trainer import Trainer
 
 
 configurations = {
@@ -37,11 +38,10 @@ configurations = {
 
 def main():
     timestamp = time.strftime("%Y-%m-%d,%H,%M")
-    attribution = "emotion"     # identity, emotion 类型
-    data_train_path = "../datasets/RAVDESS/2 image-Actor1-24-single-rectangle/"
-    data_valid_path = "../datasets/RAVDESS/valid/"
-    weight_file = '../weight/resnet/resnet50_scratch_weight.pkl'
-    log_file = '../log/log_file_{}.txt'.format(timestamp)
+    attribution = "identity"     # identity, emotion 类型
+
+    pre_weight_file = '../weight/resnet/resnet50_scratch_weight.pkl'
+    log_file = '../log/log_file_{}.log'.format(timestamp)
     checkpoint_dir = '../train_weight'
     include_top = True #
 
@@ -49,22 +49,16 @@ def main():
     net_cfg = configurations['network']
     cuda = torch.cuda.is_available()
 
-    dataset = face_dataset.RAVDESS(attribution, data_train_path, split='train')
-    train_loader = DataLoader(dataset, batch_size=train_cfg['batch_size'],
-                              shuffle=True, num_workers=8, pin_memory=True)
+
+    face_dataset = VGG_Face_Dataset('../dataset/voclexb-VGG_face-datasets/voice_face_list.npy', 'train')
+    face_loader = DataLoader(face_dataset, batch_size=24, drop_last=False,
+                             shuffle=True, num_workers=8, pin_memory=True)
+
     val_loader = None
 
     if net_cfg['type'] == 'resnet':
-        model = ResNet.resnet50(num_classes=dataset.class_num, include_top=include_top)
+        model = ResNet(num_classes=face_dataset.speakers_num, include_top=include_top)
         # utils.load_state_dict(model, weight_file)
-        # model.fc.reset_parameters()
-    elif net_cfg['type']  == 'senet50':
-        model = SENet.senet50(num_classes=dataset.class_num, include_top=include_top)
-        utils.load_state_dict(model, weight_file)
-        model.fc.reset_parameters()
-    elif net_cfg['type']  == 'vgg16':
-        model = VGG.vgg16(num_classes=dataset.class_num)
-        utils.load_state_dict_VGG(model, '../weight/resnet/vgg16-397923af.pth')  # 此项
         # model.fc.reset_parameters()
 
     criterion = nn.CrossEntropyLoss()
@@ -86,7 +80,7 @@ def main():
         criterion=criterion,
         optimizer=optim,
         lr_scheduler=lr_scheduler,
-        train_loader=train_loader,
+        train_loader=face_loader,
         val_loader=val_loader,
         log_file=log_file,
         max_epoch=train_cfg['max_epoch'],

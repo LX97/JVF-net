@@ -95,7 +95,6 @@ def get_voclexb_csv(csv_files, voice_folder, face_folder):
     return voice_face_list, len(actor_dict)
 
 
-
 if __name__ == '__main__':
     # get_RAVDESS_dataset(DATASET_PARAMETERS)
     # data_dir = 'data/RAVDESS/fbank'
