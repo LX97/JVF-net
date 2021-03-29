@@ -11,7 +11,7 @@ from submodule.resblock import Block, OptimizedBlock
 sys.path.append("/home/fz/2-VF-feature/SVHFNet/model")
 
 from pase.models.frontend import wf_builder
-from model import model3
+import model.model3 as model3
 
 class ResNet(nn.Module):
     def __init__(self, ch=64, num_classes=1000, activation=F.relu, include_top =False):
@@ -23,10 +23,10 @@ class ResNet(nn.Module):
         self.block2 = Block(ch, ch * 2, activation=activation, downsample=True)
         self.block3 = Block(ch * 2, ch * 4, activation=activation, downsample=True)
         self.block4 = Block(ch * 4, ch * 8, activation=activation, downsample=True)
-        self.block5 = Block(ch * 8, ch * 16, activation=activation, downsample=True)
-        self.block6 = Block(ch * 16, ch * 16, activation=activation, downsample=False)
+        self.block5 = Block(ch * 8, ch * 32, activation=activation, downsample=True)
+        self.block6 = Block(ch * 32, ch * 32, activation=activation, downsample=False)
         self.avgpool = nn.AvgPool2d(7, stride=1)
-        self.fc = nn.Linear(512 * 2, num_classes)
+        self.fc = nn.Linear(512 * 4, num_classes)
 
     def forward(self, x):
         h = x

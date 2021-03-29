@@ -23,9 +23,9 @@ configurations = {
     'training': dict(
         start_epoch=0,
         start_iteration = 0,
-        batch_size = 32,
+        batch_size = 64,
         max_epoch= 3000,
-        lr=0.1,
+        lr=0.01,
         momentum=0.9,
         weight_decay=0.0001,
         gamma=0.9,  # "lr_policy: step"
@@ -42,7 +42,7 @@ def main():
 
     pre_weight_file = '../weight/resnet/resnet50_scratch_weight.pkl'
     log_file = '../log/log_file_{}.log'.format(timestamp)
-    checkpoint_dir = '../train_weight'
+    checkpoint_dir = '../saved'
     include_top = True #
 
     train_cfg = configurations['training']

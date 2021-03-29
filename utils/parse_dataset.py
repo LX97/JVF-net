@@ -6,6 +6,24 @@ import shutil
 import string
 
 
+def get_dataset_files(data_dir, data_ext, celeb_ids):
+    """
+    从文件夹中寻找所有voice和face数据
+    """
+    data_list = []
+
+    # read data directory
+    for root, dirs, filenames in sorted(os.walk(data_dir)):
+        for filename in filenames:
+            if filename.endswith(data_ext):
+                filepath = os.path.join(root, filename)
+                folder = filepath[len(data_dir):].split('/')[1]
+                celeb_name = celeb_ids.get(folder, folder)   #  default_value不设置的话默认为None，设置的话即如果找不到则返回default设定的值
+                data_list.append({'name': celeb_name,  'filepath': filepath })
+
+    return data_list
+
+
 def get_voclexb_labels(voice_list, face_list, celeb_ids):
     """
     合并voice和face中的同类项目
@@ -27,12 +45,9 @@ def get_voclexb_labels(voice_list, face_list, celeb_ids):
     temp1 = []
     temp2 = []
 
-    # 建立
-
-
     # 建立联合组voice+face-list
     for name in names[:]:
-        for item in voice_list:   # 为list增加序号label_id
+        for item in voice_list:   # 为list增加序号label_id 我们
             if name == item['name']:
                 temp1.append(item['filepath'])
         for item in face_list:
@@ -45,23 +60,6 @@ def get_voclexb_labels(voice_list, face_list, celeb_ids):
         temp2.clear()
 
     return voice_face_list
-
-
-def get_dataset_files(data_dir, data_ext, celeb_ids):
-    """
-    从文件夹中寻找所有voice和face数据
-    """
-    data_list = []
-
-    # read data directory
-    for root, dirs, filenames in os.walk(data_dir):
-        for filename in filenames:
-            if filename.endswith(data_ext):
-                filepath = os.path.join(root, filename)
-                folder = filepath[len(data_dir):].split('/')[1]
-                celeb_name = celeb_ids.get(folder, folder)   #  default_value不设置的话默认为None，设置的话即如果找不到则返回default设定的值
-                data_list.append({'name': celeb_name,  'filepath': filepath })
-    return data_list
 
 
 def get_voclexb_csv(csv_files, voice_folder, face_folder):
@@ -81,12 +79,12 @@ def get_voclexb_csv(csv_files, voice_folder, face_folder):
             actor_dict[actor_ID] = name
             actor_dict1[name] = actor_ID
 
+    face_list = get_dataset_files(face_folder, 'jpg', actor_dict1)
     voice_list = get_dataset_files(voice_folder, 'wav', actor_dict)
-    face_list = get_dataset_files(face_folder, 'jpg', actor_dict)
     voice_face_list = get_voclexb_labels(voice_list, face_list, actor_dict1)
 
-    # np.save('./dataset/voclexb-VGG_face-datasets/voice_face_list.npy', voice_face_list)
-    csv_pth = os.path.join('../dataset/voclexb-VGG_face-datasets/', 'voice_face_list.csv')
+    np.save('./dataset/voclexb-VGG_face-datasets/voice_face_list.npy', voice_face_list)
+    csv_pth = os.path.join('./dataset/voclexb-VGG_face-datasets/', 'voice_face_list.csv')
     with open(csv_pth,'w',newline='', ) as f:
         f_scv = csv.DictWriter(f,csv_headers,delimiter = '\t', lineterminator = '\n')
         f_scv.writeheader()
@@ -100,9 +98,11 @@ if __name__ == '__main__':
     # data_dir = 'data/RAVDESS/fbank'
 
     csv_files = './dataset/voclexb-VGG_face-datasets/vox1_meta.csv'
-    voice_folder = './dataset/voclexb-VGG_face-datasets/2-voice-wav'
-    face_folder = './dataset/voclexb-VGG_face-datasets/1-face'
+    voice_folder = '/home/fz/2-VF-feature/JVF-net/dataset/voclexb-VGG_face-datasets/2-voice-wav'
+    face_folder = '/home/fz/2-VF-feature/JVF-net/dataset/voclexb-VGG_face-datasets/1-face'
     list, num = get_voclexb_csv(csv_files, voice_folder, face_folder)
+    get_voclexb_labels
+
     pass
 
 
